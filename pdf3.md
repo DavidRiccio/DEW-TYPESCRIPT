@@ -1,78 +1,121 @@
+# D3S1.1. Manejo de Errores
+El manejo de errores en TypeScript se puede realizar de manera similar a JavaScript, pero aprovechando las ventajas del tipado estático de TypeScript para identificar tipos de errores específicos. Aquí veremos cómo usar `try-catch` y `throw`.
 
-# Manipulación del DOM, Eventos y Efectos en jQuery
+### Ejemplo 1: Manejo básico de errores
+En TypeScript, el uso de `try-catch` es muy útil para manejar excepciones que podrían ocurrir en tiempo de ejecución.
 
-Este resumen cubre métodos para manipular el DOM, trabajar con eventos y aplicar efectos en jQuery.
+```typescript
+function divide(a: number, b: number): number {
+    if (b === 0) {
+        throw new Error("No se puede dividir por cero");
+    }
+    return a / b;
+}
 
-## Manipulación del DOM
+try {
+    console.log(divide(10, 0));
+} catch (error) {
+    console.error("Error encontrado:", (error as Error).message);
+}
+```
+Aquí lanzamos un error cuando el divisor es cero. El bloque catch captura el error y muestra su mensaje.
 
-### Modificación de atributos y contenido
-- **.attr()**: Obtiene o establece atributos de un elemento.
-  ```javascript
-  $("selector").attr("nombreDelAtributo", "nuevoValor");
-  ```
-- **.html()**: Obtiene o establece el contenido HTML de un elemento, incluyendo etiquetas.
-  ```javascript
-  $("div").html("<strong>Contenido</strong>");
-  ```
-- **.text()**: Obtiene o establece el contenido de texto de un elemento, sin HTML.
-  ```javascript
-  $("p").text("Texto actualizado");
-  ```
+Ejemplo 2: Errores personalizados
+Podemos crear nuestras propias clases de error en TypeScript para manejar errores específicos.
 
-### Manejo de clases CSS
-- **.addClass()**: Agrega clases CSS.
-- **.removeClass()**: Elimina clases CSS.
-- **.toggleClass()**: Alterna la presencia de una clase.
-  ```javascript
-  $("#miDiv").toggleClass("activo");
-  ```
+```typescript
+Copiar código
+class InvalidInputError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "InvalidInputError";
+    }
+}
 
-### Inserción de elementos en el DOM
-- **.append()**: Agrega contenido al final del elemento.
-- **.prepend()**: Agrega contenido al inicio del elemento.
-- **.after()**: Inserta contenido después del elemento.
-- **.before()**: Inserta contenido antes del elemento.
-  ```javascript
-  $("#lista").append("<li>Nuevo elemento</li>");
-  ```
+function processInput(input: number) {
+    if (input < 0) {
+        throw new InvalidInputError("El valor de entrada no puede ser negativo.");
+    }
+    console.log("Procesando entrada:", input);
+}
 
-### Eliminación de elementos
-- **.remove()**: Elimina el elemento y sus hijos del DOM.
-- **.empty()**: Elimina solo el contenido de un elemento, manteniendo el propio elemento en el DOM.
-  ```javascript
-  $("#contenedor").empty();
-  ```
+try {
+    processInput(-5);
+} catch (error) {
+    if (error instanceof InvalidInputError) {
+        console.error("Error específico:", error.message);
+    } else {
+        console.error("Error desconocido:", error);
+    }
+}
+```
+En este ejemplo, se lanza un error específico InvalidInputError cuando el valor de entrada es negativo, y se captura en el bloque catch.
 
-## Eventos en jQuery
+D3S1.2. Decoradores
+Los decoradores en TypeScript son una característica experimental que permite modificar clases y métodos, entre otras estructuras, a través de funciones especiales. Son especialmente útiles en frameworks como Angular. Para habilitar los decoradores, primero hay que activar la opción "experimentalDecorators": true en el archivo tsconfig.json.
 
-Algunos eventos comunes incluyen:
-- **.click()**: Evento de clic.
-- **.dblclick()**: Evento de doble clic.
-- **.hover()**: Evento de hover.
-- **.focus()** y **.blur()**: Eventos de enfoque y desenfoque.
-- **.change()**: Evento de cambio en un elemento.
-- **.submit()**: Evento de envío de formulario.
-- **.keydown()**, **.keyup()**: Eventos de teclas.
-  ```javascript
-  $("button").click(function() {
-      alert("Botón clicado");
-  });
-  ```
+Ejemplo 1: Decorador de Clase
+Un decorador de clase puede modificar la clase o agregarle propiedades y métodos.
 
-### Métodos para gestionar eventos
-- **.on()**: Adjunta uno o más eventos a elementos.
-- **.off()**: Elimina uno o más eventos de elementos.
-- **.trigger()**: Dispara un evento manualmente.
+```typescript
+Copiar código
+function logClass(target: Function) {
+    console.log("Clase decorada:", target.name);
+}
 
-## Efectos en jQuery
+@logClass
+class MiClase {
+    constructor(public nombre: string) {}
+}
 
-### Efectos de animación
-- **.show()** y **.hide()**: Muestran u ocultan elementos, de forma instantánea o gradual.
-- **.toggle()**: Alterna la visibilidad de un elemento.
-- **.fadeIn()** y **.fadeOut()**: Efecto de desvanecimiento.
-- **.slideUp()** y **.slideDown()**: Deslizamiento para mostrar u ocultar un elemento.
-  ```javascript
-  $("#miElemento").fadeIn("slow");
-  ```
+const instancia = new MiClase("Ejemplo");
+```
+En este caso, el decorador logClass imprime el nombre de la clase cada vez que la clase se define.
 
-Este resumen incluye los métodos clave para manipular el DOM, gestionar eventos y aplicar efectos con jQuery.
+Ejemplo 2: Decorador de Método
+Podemos crear decoradores que modifiquen el comportamiento de métodos específicos. A continuación, un decorador que registra el tiempo de ejecución de un método.
+
+```typescript
+Copiar código
+function logExecutionTime(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+    descriptor.value = function (...args: any[]) {
+        const start = Date.now();
+        const result = originalMethod.apply(this, args);
+        const end = Date.now();
+        console.log(`Método ${propertyKey} ejecutado en ${end - start}ms`);
+        return result;
+    };
+}
+
+class Operaciones {
+    @logExecutionTime
+    calcular(a: number, b: number): number {
+        return a + b;
+    }
+}
+
+const ops = new Operaciones();
+ops.calcular(5, 10);
+```
+En este caso, el decorador logExecutionTime calcula y registra el tiempo que toma en ejecutarse el método calcular.
+
+Ejemplo 3: Decorador de Propiedades
+Otro uso común es un decorador que valida o transforma el valor de una propiedad.
+
+```typescript
+Copiar código
+function readonly(target: any, propertyKey: string) {
+    Object.defineProperty(target, propertyKey, {
+        writable: false,
+    });
+}
+
+class Persona {
+    @readonly
+    nombre: string = "John";
+}
+
+const persona = new Persona();
+persona.nombre = "Jane"; // Esto lanzará un error en modo estricto porque la propiedad es de solo lectura.
+En este ejemplo, el decorador readonly asegura que la propiedad nombre sea de solo lectura.
